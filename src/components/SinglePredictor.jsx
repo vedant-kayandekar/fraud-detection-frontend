@@ -148,7 +148,7 @@ export default function SinglePredictor() {
                 </div>
 
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
                     {result.is_fraud ? (
                       <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm font-semibold flex items-center gap-1">
                         <AlertTriangle className="w-4 h-4" /> FRAUD DETECTED
@@ -161,6 +161,20 @@ export default function SinglePredictor() {
                     <span className="text-sm text-gray-400">
                       Confidence: <span className="text-white font-medium">{result.confidence}</span>
                     </span>
+                    {result.model_used && (
+                      <span className="px-2 py-1 bg-accent/10 text-accent text-xs rounded-md">
+                        Model: {result.model_used}
+                      </span>
+                    )}
+                    {result.risk_level && (
+                      <span className={`px-2 py-1 text-xs rounded-md font-medium
+                        ${result.risk_level === 'Critical' ? 'bg-red-500/20 text-red-400'
+                        : result.risk_level === 'High' ? 'bg-orange-500/20 text-orange-400'
+                        : result.risk_level === 'Medium' ? 'bg-amber-500/20 text-amber-400'
+                        : 'bg-green-500/20 text-green-400'}`}>
+                        Risk: {result.risk_level}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -168,11 +182,11 @@ export default function SinglePredictor() {
                       <span
                         key={i}
                         className={`px-3 py-1 rounded-lg text-xs font-medium
-                          ${r.impact === 'high' ? 'bg-red-500/20 text-red-400'
-                          : r.impact === 'medium' ? 'bg-amber-500/20 text-amber-400'
+                          ${r.impact === 'high' || r.impact_score > 0.5 ? 'bg-red-500/20 text-red-400'
+                          : r.impact === 'medium' || r.impact_score > 0.2 ? 'bg-amber-500/20 text-amber-400'
                           : 'bg-blue-500/20 text-blue-400'}`}
                       >
-                        {r.feature || r}
+                        {r.feature || r} {r.direction ? `(${r.direction})` : ''}
                       </span>
                     ))}
                   </div>

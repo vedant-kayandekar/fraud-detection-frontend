@@ -1,5 +1,6 @@
 import React from 'react';
 import KPICards from '../components/KPICards';
+import ModelComparison from '../components/ModelComparison';
 import Charts from '../components/Charts';
 import DataQualityReport from '../components/DataQualityReport';
 import FraudTable from '../components/FraudTable';
@@ -8,9 +9,13 @@ import { ArrowLeft, Clock } from 'lucide-react';
 
 /**
  * Dashboard page showing full analysis results.
+ * Receives jobId for background model comparison polling.
  */
-export default function Dashboard({ data, onReset }) {
+export default function Dashboard({ data, onReset, jobId }) {
   if (!data) return null;
+
+  // job_id can come from response payload or from prop
+  const effectiveJobId = jobId || data.job_id || data.fraud_results?.job_id;
 
   return (
     <div className="min-h-screen px-4 py-8 max-w-7xl mx-auto">
@@ -42,6 +47,14 @@ export default function Dashboard({ data, onReset }) {
       {/* KPI Cards */}
       <div className="mb-6">
         <KPICards data={data} />
+      </div>
+
+      {/* Model Comparison — progressive loading with polling */}
+      <div className="mb-6">
+        <ModelComparison
+          fraudResults={data.fraud_results}
+          jobId={effectiveJobId}
+        />
       </div>
 
       {/* Charts + Data Quality */}

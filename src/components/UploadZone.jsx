@@ -1,14 +1,24 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, Loader2 } from 'lucide-react';
 
+const STAGE_ICONS = {
+  uploading: '📤',
+  processing: '🧹',
+  features: '🔬',
+  models: '🤖',
+  charts: '📊',
+  complete: '✅',
+};
+
 /**
- * Drag-and-drop CSV upload component with progress indicator.
+ * Drag-and-drop CSV upload component with pipeline progress.
  */
 export default function UploadZone({ onResult, onError }) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [stageMessage, setStageMessage] = useState('');
   const [error, setError] = useState(null);
 
   const handleDragOver = useCallback((e) => {
@@ -49,15 +59,21 @@ export default function UploadZone({ onResult, onError }) {
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
-    setProgress(0);
+    setProgress(5);
+    setStageMessage('Starting upload...');
     setError(null);
 
     try {
       const { analyzeCSV } = await import('../lib/api');
-      const result = await analyzeCSV(file, null, (pct) => setProgress(pct));
+      const result = await analyzeCSV(file, null, (update) => {
+        setProgress(update.progress || 0);
+        setStageMessage(
+          `${STAGE_ICONS[update.stage] || '⏳'} ${update.message || 'Processing...'}`
+        );
+      });
       onResult(result);
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message || 'Upload failed';
+      const msg = err.message || 'Upload failed';
       setError(msg);
       if (onError) onError(msg);
     } finally {
@@ -99,16 +115,14 @@ export default function UploadZone({ onResult, onError }) {
         {uploading ? (
           <div className="space-y-4 animate-fade-in">
             <Loader2 className="w-12 h-12 text-accent mx-auto animate-spin" />
-            <p className="text-lg font-semibold text-white">Processing your data...</p>
+            <p className="text-lg font-semibold text-white">{stageMessage}</p>
             <div className="w-full bg-dark-border rounded-full h-3 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-accent to-purple-500 rounded-full transition-all duration-300"
-                style={{ width: `${Math.max(progress, 10)}%` }}
+                className="h-full bg-gradient-to-r from-accent to-purple-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(progress, 5)}%` }}
               />
             </div>
-            <p className="text-sm text-gray-400">
-              {progress < 100 ? `Uploading... ${progress}%` : 'Running ML pipeline — this may take a moment'}
-            </p>
+            <p className="text-xs text-gray-500">{progress}%</p>
           </div>
         ) : file ? (
           <div className="space-y-4 animate-fade-in">

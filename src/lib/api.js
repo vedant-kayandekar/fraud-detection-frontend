@@ -1,18 +1,14 @@
-import axios from 'axios';
-
 const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
-
-const api = axios.create({
-  baseURL: `${API_BASE}/api/v1`,
-  timeout: 120000, // 2 minute timeout for large files
-});
 
 /**
  * Upload CSV for full fraud analysis.
+ * Returns dashboard JSON after XGBoost fast-path completes.
+ * Background models accessible via pollComparison().
+ *
  * @param {File} file - CSV file to upload
  * @param {string|null} userId - Optional user ID for history
- * @param {function} onProgress - Progress callback
- * @returns {Promise<object>} Analysis results
+ * @param {function} onProgress - Progress callback ({stage, progress, message})
+ * @returns {Promise<object>} Analysis results including job_id
  */
 export async function analyzeCSV(file, userId = null, onProgress = null) {
   const formData = new FormData();
@@ -21,16 +17,89 @@ export async function analyzeCSV(file, userId = null, onProgress = null) {
     formData.append('user_id', userId);
   }
 
-  const response = await api.post('/analyze', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: (progressEvent) => {
-      if (onProgress && progressEvent.total) {
-        const pct = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-        onProgress(pct);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/api/v1/analyze`);
+    xhr.timeout = 300000;
+
+    xhr.upload.onprogress = (e) => {
+      if (onProgress && e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 30);
+        onProgress({ stage: 'uploading', progress: pct, message: 'Uploading file...' });
       }
-    },
+    };
+
+    xhr.onloadstart = () => {
+      if (onProgress) onProgress({ stage: 'uploading', progress: 0, message: 'Starting upload...' });
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (onProgress) onProgress({ stage: 'complete', progress: 100, message: 'Dashboard ready!' });
+          resolve(data);
+        } catch (e) {
+          reject(new Error('Failed to parse server response'));
+        }
+      } else {
+        let detail = 'Analysis failed';
+        try { detail = JSON.parse(xhr.responseText).detail || detail; } catch {}
+        reject(new Error(detail));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.ontimeout = () => reject(new Error('Request timed out'));
+
+    xhr.upload.onload = () => {
+      if (onProgress) {
+        onProgress({ stage: 'processing', progress: 35, message: '🧹 Cleaning data...' });
+        setTimeout(() => onProgress({ stage: 'features', progress: 50, message: '🔬 Engineering fraud signals...' }), 2000);
+        setTimeout(() => onProgress({ stage: 'models', progress: 65, message: '🤖 Running XGBoost fast-path...' }), 4000);
+        setTimeout(() => onProgress({ stage: 'shap', progress: 80, message: '🧠 Computing SHAP explanations...' }), 7000);
+        setTimeout(() => onProgress({ stage: 'charts', progress: 90, message: '📊 Building dashboard...' }), 10000);
+      }
+    };
+
+    xhr.send(formData);
   });
-  return response.data;
+}
+
+/**
+ * Poll background model comparison results.
+ * Calls onUpdate every 3 seconds until status === 'complete'.
+ *
+ * @param {string} jobId - Job ID from analyze response
+ * @param {function} onUpdate - Called with comparison data on each poll
+ * @param {function} onComplete - Called with final comparison data when all models done
+ * @returns {function} Cleanup function to stop polling
+ */
+export function pollComparison(jobId, onUpdate, onComplete) {
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/comparison/${jobId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      onUpdate(data);
+
+      if (data.status === 'complete') {
+        clearInterval(interval);
+        if (onComplete) onComplete(data);
+      }
+    } catch (err) {
+      console.error('Comparison poll error:', err);
+    }
+  }, 3000);
+
+  // Auto-stop after 2 minutes
+  const timeout = setTimeout(() => clearInterval(interval), 120000);
+
+  return () => {
+    clearInterval(interval);
+    clearTimeout(timeout);
+  };
 }
 
 /**
@@ -39,8 +108,16 @@ export async function analyzeCSV(file, userId = null, onProgress = null) {
  * @returns {Promise<object>} Prediction result
  */
 export async function predictSingle(transaction) {
-  const response = await api.post('/predict-single', transaction);
-  return response.data;
+  const response = await fetch(`${API_BASE}/api/v1/predict-single`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(transaction),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || 'Prediction failed');
+  }
+  return response.json();
 }
 
 /**
@@ -49,8 +126,8 @@ export async function predictSingle(transaction) {
  * @returns {Promise<Array>} History entries
  */
 export async function getHistory(userId) {
-  const response = await api.get(`/history/${userId}`);
-  return response.data.history;
+  const response = await fetch(`${API_BASE}/api/v1/history/${userId}`);
+  if (!response.ok) throw new Error('Failed to fetch history');
+  const data = await response.json();
+  return data.history;
 }
-
-export default api;
