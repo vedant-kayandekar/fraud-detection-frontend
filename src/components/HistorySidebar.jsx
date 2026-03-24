@@ -1,41 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { History, LogIn, LogOut, X, ChevronRight, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { History, LogOut, X, ChevronRight, User } from 'lucide-react';
+import { getHistory } from '../lib/api';
 
 /**
- * Collapsible sidebar with Supabase auth + analysis history.
+ * Collapsible sidebar with analysis history.
  */
-export default function HistorySidebar({ onLoadResult }) {
+export default function HistorySidebar({ onLoadResult, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) setUser(data.user);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user || null);
-    });
-    return () => listener?.subscription?.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (user && isOpen) fetchHistory();
-  }, [user, isOpen]);
+    if (isOpen) fetchHistory();
+  }, [isOpen]);
 
   const fetchHistory = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const { getHistory: fetchHist } = await import('../lib/api');
-      const data = await fetchHist(user.id);
+      const data = await getHistory();
       setHistory(data);
     } catch (e) {
       console.error('Failed to fetch history:', e);
@@ -43,37 +25,7 @@ export default function HistorySidebar({ onLoadResult }) {
     setLoading(false);
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!supabase) { setLoginError('Supabase not configured'); return; }
-    setLoginError('');
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setShowLogin(false);
-    } catch (err) {
-      setLoginError(err.message);
-    }
-  };
 
-  const handleSignup = async () => {
-    if (!supabase) { setLoginError('Supabase not configured'); return; }
-    setLoginError('');
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      setLoginError('Check your email for confirmation.');
-    } catch (err) {
-      setLoginError(err.message);
-    }
-  };
-
-  const handleLogout = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    setUser(null);
-    setHistory([]);
-  };
 
   return (
     <>
@@ -103,57 +55,16 @@ export default function HistorySidebar({ onLoadResult }) {
               </button>
             </div>
 
-            {!user ? (
-              <div>
-                {!showLogin ? (
-                  <button
-                    onClick={() => setShowLogin(true)}
-                    className="w-full px-4 py-3 bg-accent/10 border border-accent/30 rounded-xl text-accent font-medium
-                               flex items-center justify-center gap-2 hover:bg-accent/20 transition-colors"
-                  >
-                    <LogIn className="w-4 h-4" /> Sign In to View History
-                  </button>
-                ) : (
-                  <form onSubmit={handleLogin} className="space-y-3">
-                    <input
-                      type="email" placeholder="Email" value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-sm text-white
-                                 placeholder-gray-500 focus:border-accent focus:outline-none"
-                    />
-                    <input
-                      type="password" placeholder="Password" value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-sm text-white
-                                 placeholder-gray-500 focus:border-accent focus:outline-none"
-                    />
-                    {loginError && <p className="text-xs text-red-400">{loginError}</p>}
-                    <button
-                      type="submit"
-                      className="w-full px-4 py-2 bg-accent text-white rounded-lg font-medium hover:bg-accent/80 transition-colors"
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      type="button" onClick={handleSignup}
-                      className="w-full px-4 py-2 bg-dark-border text-gray-300 rounded-lg text-sm hover:bg-dark-hover transition-colors"
-                    >
-                      Sign Up Instead
-                    </button>
-                  </form>
-                )}
-              </div>
-            ) : (
-              <div>
-                <div className="flex items-center justify-between mb-4 p-3 bg-dark-bg rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-accent" />
-                    <span className="text-sm text-gray-300 truncate">{user.email}</span>
-                  </div>
-                  <button onClick={handleLogout} className="text-gray-400 hover:text-red-400">
-                    <LogOut className="w-4 h-4" />
-                  </button>
+            <div>
+              <div className="flex items-center justify-between mb-4 p-3 bg-dark-bg rounded-xl">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-accent" />
+                  <span className="text-sm text-gray-300 font-medium">My Account</span>
                 </div>
+                <button onClick={onLogout} className="text-gray-400 hover:text-red-400" title="Log Out">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
 
                 {loading ? (
                   <div className="space-y-3">
@@ -187,8 +98,7 @@ export default function HistorySidebar({ onLoadResult }) {
                     ))}
                   </div>
                 )}
-              </div>
-            )}
+            </div>
           </div>
           <div className="flex-1 bg-black/50" />
         </div>

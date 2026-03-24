@@ -1,5 +1,55 @@
 const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
 
+// Helper to get auth token
+export const getToken = () => localStorage.getItem('fraudguard_token');
+
+/**
+ * Authenticate user and get JWT session.
+ */
+export async function login(email, password) {
+  const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Login failed');
+  }
+  const data = await res.json();
+  if (data.access_token) {
+    localStorage.setItem('fraudguard_token', data.access_token);
+  }
+  return data;
+}
+
+/**
+ * Register a new user and get JWT session.
+ */
+export async function signup(email, password) {
+  const res = await fetch(`${API_BASE}/api/v1/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Signup failed');
+  }
+  const data = await res.json();
+  if (data.access_token) {
+    localStorage.setItem('fraudguard_token', data.access_token);
+  }
+  return data;
+}
+
+/**
+ * Log out the active user.
+ */
+export function logout() {
+  localStorage.removeItem('fraudguard_token');
+}
+
 /**
  * Upload CSV for full fraud analysis.
  * Returns dashboard JSON after XGBoost fast-path completes.
@@ -10,17 +60,19 @@ const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
  * @param {function} onProgress - Progress callback ({stage, progress, message})
  * @returns {Promise<object>} Analysis results including job_id
  */
-export async function analyzeCSV(file, userId = null, onProgress = null) {
+export async function analyzeCSV(file, onProgress = null) {
   const formData = new FormData();
   formData.append('file', file);
-  if (userId) {
-    formData.append('user_id', userId);
-  }
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_BASE}/api/v1/analyze`);
     xhr.timeout = 300000;
+    
+    const token = getToken();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
 
     xhr.upload.onprogress = (e) => {
       if (onProgress && e.lengthComputable) {
@@ -121,12 +173,18 @@ export async function predictSingle(transaction) {
 }
 
 /**
- * Get analysis history for a user.
- * @param {string} userId - User UUID
+ * Get analysis history for authenticated user.
  * @returns {Promise<Array>} History entries
  */
-export async function getHistory(userId) {
-  const response = await fetch(`${API_BASE}/api/v1/history/${userId}`);
+export async function getHistory() {
+  const token = getToken();
+  if (!token) return [];
+
+  const response = await fetch(`${API_BASE}/api/v1/history`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
   if (!response.ok) throw new Error('Failed to fetch history');
   const data = await response.json();
   return data.history;
