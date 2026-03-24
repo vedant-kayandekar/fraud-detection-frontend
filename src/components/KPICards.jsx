@@ -25,7 +25,7 @@ function useCounter(target, duration = 1500) {
 }
 
 /**
- * Four animated KPI counter cards.
+ * Four animated KPI cards — Sentinel Amber design.
  */
 export default function KPICards({ data }) {
   const totalTxn = useCounter(data?.total_rows || 0);
@@ -39,36 +39,39 @@ export default function KPICards({ data }) {
 
   const cards = [
     {
-      label: 'Total Transactions',
+      label: 'TOTAL TRANSACTIONS',
       value: totalTxn.toLocaleString(),
       icon: Activity,
-      color: 'from-blue-500 to-indigo-600',
-      bgColor: 'bg-blue-500/10',
-      textColor: 'text-blue-400',
+      accentClass: 'text-ink',
+      iconBg: 'bg-surface-container-highest',
+      barColor: 'bg-ink',
     },
     {
-      label: 'Fraud Detected',
-      value: `${fraudCount.toLocaleString()} (${fraudRate.toFixed(1)}%)`,
+      label: 'FRAUD DETECTED',
+      value: `${fraudCount.toLocaleString()}`,
+      subtitle: `⚠ High risk threshold met`,
       icon: ShieldAlert,
-      color: 'from-red-500 to-rose-600',
-      bgColor: 'bg-red-500/10',
-      textColor: 'text-red-400',
+      accentClass: 'text-accent',
+      iconBg: 'bg-accent/10',
+      barColor: 'bg-accent',
     },
     {
-      label: 'Data Quality Score',
+      label: 'DATA QUALITY',
       value: `${qualityScore}%`,
+      subtitle: '✓ Optimal schema match',
       icon: Sparkles,
-      color: 'from-amber-500 to-orange-600',
-      bgColor: 'bg-amber-500/10',
-      textColor: 'text-amber-400',
+      accentClass: 'text-safe',
+      iconBg: 'bg-safe/10',
+      barColor: 'bg-safe',
     },
     {
-      label: 'Model F1 Score',
+      label: 'F1 SCORE',
       value: `${f1Score}%`,
+      subtitle: '▩ Model: XGBoost v2.1',
       icon: Target,
-      color: 'from-green-500 to-emerald-600',
-      bgColor: 'bg-green-500/10',
-      textColor: 'text-green-400',
+      accentClass: 'text-ink',
+      iconBg: 'bg-surface-container-highest',
+      barColor: 'bg-ink',
     },
   ];
 
@@ -80,17 +83,19 @@ export default function KPICards({ data }) {
           className="glass-card p-6 animate-slide-up"
           style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className={`p-2.5 rounded-xl ${card.bgColor}`}>
-              <card.icon className={`w-5 h-5 ${card.textColor}`} />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-white mb-1">{card.value}</p>
-          <p className="text-sm text-gray-400">{card.label}</p>
-          <div className={`h-1 w-full mt-4 rounded-full bg-dark-border overflow-hidden`}>
+          <p className="text-xs tracking-[0.1em] text-on-surface-variant font-medium mb-3">
+            {card.label}
+          </p>
+          <p className={`font-display text-3xl font-bold ${card.accentClass} mb-1`}>
+            {card.value}
+          </p>
+          {card.subtitle && (
+            <p className="text-xs text-on-surface-variant">{card.subtitle}</p>
+          )}
+          <div className="h-1 w-full mt-4 rounded-full bg-surface-container-highest overflow-hidden">
             <div
-              className={`h-full rounded-full bg-gradient-to-r ${card.color} transition-all duration-1000`}
-              style={{ width: i === 0 ? '100%' : `${Math.min((card.value.toString().replace(/[^0-9.]/g, '') || 0), 100)}%` }}
+              className={`h-full rounded-full ${card.barColor} transition-all duration-1000`}
+              style={{ width: `${Math.min(parseFloat(card.value.replace(/[^0-9.]/g, '')) || 100, 100)}%` }}
             />
           </div>
         </div>

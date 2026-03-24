@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
 
 /**
- * Data Quality Report showing exact cleaning counts with color-coded severity.
+ * Data Quality Report — Sentinel Amber design.
  */
 export default function DataQualityReport({ quality }) {
   if (!quality) return null;
@@ -56,19 +56,17 @@ export default function DataQualityReport({ quality }) {
   ];
 
   const severityConfig = {
-    red: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20', Icon: XCircle },
-    amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', Icon: AlertTriangle },
-    green: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/20', Icon: CheckCircle },
-    blue: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', Icon: Info },
+    red: { bg: 'bg-fraud/8', text: 'text-fraud', Icon: XCircle },
+    amber: { bg: 'bg-accent/8', text: 'text-accent', Icon: AlertTriangle },
+    green: { bg: 'bg-safe/8', text: 'text-safe', Icon: CheckCircle },
+    blue: { bg: 'bg-blue-600/8', text: 'text-blue-700', Icon: Info },
   };
 
-  // Missing per column
   const missingCols = quality.missing_per_column || {};
 
   return (
     <div className="glass-card p-6 animate-slide-up" id="data-quality-report">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Info className="w-5 h-5 text-accent" />
+      <h3 className="text-base font-semibold text-ink mb-4 flex items-center gap-2">
         Data Quality Report
       </h3>
 
@@ -78,11 +76,11 @@ export default function DataQualityReport({ quality }) {
           return (
             <div
               key={item.label}
-              className={`flex items-center justify-between p-3 rounded-xl ${cfg.bg} border ${cfg.border}`}
+              className="flex items-center justify-between py-2.5"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <cfg.Icon className={`w-4 h-4 ${cfg.text}`} />
-                <span className="text-sm text-gray-300">{item.label}</span>
+                <span className="text-sm text-on-surface-variant">{item.label}</span>
               </div>
               <span className={`text-sm font-semibold ${cfg.text}`}>
                 {item.value.toLocaleString()}
@@ -94,7 +92,7 @@ export default function DataQualityReport({ quality }) {
 
       {Object.keys(missingCols).length > 0 && (
         <div className="mt-6">
-          <h4 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">
+          <h4 className="text-xs font-medium text-on-surface-variant mb-3 uppercase tracking-[0.1em]">
             Missing Values per Column
           </h4>
           <div className="space-y-2">
@@ -102,14 +100,14 @@ export default function DataQualityReport({ quality }) {
               const pct = Math.min((count / (quality.total_rows || 1)) * 100, 100);
               return (
                 <div key={col} className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400 w-40 truncate">{col}</span>
-                  <div className="flex-1 bg-dark-border rounded-full h-2 overflow-hidden">
+                  <span className="text-xs text-on-surface-variant w-40 truncate">{col}</span>
+                  <div className="flex-1 bg-surface-container-highest rounded-full h-2 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-red-500"
+                      className="h-full rounded-full bg-gradient-to-r from-accent to-fraud"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-400 w-12 text-right">{count}</span>
+                  <span className="text-xs text-on-surface-variant w-12 text-right">{count}</span>
                 </div>
               );
             })}

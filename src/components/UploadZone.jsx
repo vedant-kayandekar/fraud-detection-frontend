@@ -11,7 +11,7 @@ const STAGE_ICONS = {
 };
 
 /**
- * Drag-and-drop CSV upload component with pipeline progress.
+ * Drag-and-drop CSV upload component — Sentinel Amber design.
  */
 export default function UploadZone({ onResult, onError }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -98,7 +98,7 @@ export default function UploadZone({ onResult, onError }) {
           transition-all duration-300 cursor-pointer
           ${isDragging
             ? 'border-accent bg-accent/10 scale-[1.02]'
-            : 'border-dark-border hover:border-accent/50 hover:bg-dark-card/50'
+            : 'border-accent/40 bg-surface-container-low hover:border-accent/70 hover:bg-surface-container'
           }
           ${uploading ? 'pointer-events-none opacity-70' : ''}
         `}
@@ -115,33 +115,33 @@ export default function UploadZone({ onResult, onError }) {
         {uploading ? (
           <div className="space-y-4 animate-fade-in">
             <Loader2 className="w-12 h-12 text-accent mx-auto animate-spin" />
-            <p className="text-lg font-semibold text-white">{stageMessage}</p>
-            <div className="w-full bg-dark-border rounded-full h-3 overflow-hidden">
+            <p className="text-lg font-semibold text-ink">{stageMessage}</p>
+            <div className="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-accent to-purple-500 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-accent to-amber-400 rounded-full transition-all duration-500"
                 style={{ width: `${Math.max(progress, 5)}%` }}
               />
             </div>
-            <p className="text-xs text-gray-500">{progress}%</p>
+            <p className="text-xs text-on-surface-variant">{progress}%</p>
           </div>
         ) : file ? (
           <div className="space-y-4 animate-fade-in">
             <FileText className="w-12 h-12 text-accent mx-auto" />
             <div>
-              <p className="text-lg font-semibold text-white">{file.name}</p>
-              <p className="text-sm text-gray-400">{formatSize(file.size)}</p>
+              <p className="text-lg font-semibold text-ink">{file.name}</p>
+              <p className="text-sm text-on-surface-variant">{formatSize(file.size)}</p>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-              className="px-8 py-3 bg-gradient-to-r from-accent to-purple-600 text-white font-semibold
-                         rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg shadow-accent/25"
+              className="px-8 py-3 bg-ink text-white font-medium
+                         rounded-lg hover:bg-ink/90 transition-all duration-200 shadow-ambient"
               id="analyze-button"
             >
               🔍 Analyze for Fraud
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setFile(null); }}
-              className="block mx-auto text-sm text-gray-500 hover:text-gray-300 mt-2"
+              className="block mx-auto text-sm text-on-surface-variant hover:text-ink mt-2"
             >
               Choose a different file
             </button>
@@ -152,19 +152,25 @@ export default function UploadZone({ onResult, onError }) {
               <Upload className="w-8 h-8 text-accent" />
             </div>
             <div>
-              <p className="text-lg font-semibold text-white">
+              <p className="text-lg font-semibold text-ink">
                 Drop your CSV file here
               </p>
-              <p className="text-sm text-gray-400 mt-1">
-                or click to browse • Max 50MB
+              <p className="text-sm text-on-surface-variant mt-2">
+                Ensure your data matches the standard transaction schema for optimal detection accuracy.
               </p>
             </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); document.getElementById('csv-input').click(); }}
+              className="px-6 py-2.5 border border-outline-variant text-ink rounded-lg hover:bg-surface-container transition-colors text-sm"
+            >
+              Browse files
+            </button>
           </div>
         )}
       </div>
 
       {error && (
-        <div className="mt-4 p-4 bg-fraud/10 border border-fraud/30 rounded-xl flex items-center gap-3 animate-fade-in">
+        <div className="mt-4 p-4 bg-fraud-container rounded-xl flex items-center gap-3 animate-fade-in">
           <AlertCircle className="w-5 h-5 text-fraud flex-shrink-0" />
           <p className="text-sm text-fraud">{error}</p>
         </div>

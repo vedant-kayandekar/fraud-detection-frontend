@@ -45,34 +45,37 @@ export default function App() {
     navigate('/login');
   };
 
-  // Restrict access if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
-      </Routes>
-    );
-  }
-
   return (
-    <div className="relative min-h-screen bg-[#0f1117]">
-      <HistorySidebar 
-        onLoadResult={handleLoadHistory} 
-        onLogout={handleLogout} 
-      />
+    <div className="relative min-h-screen bg-surface">
+      {isAuthenticated && (
+        <HistorySidebar 
+          onLoadResult={handleLoadHistory} 
+          onLogout={handleLogout} 
+        />
+      )}
 
       <Routes>
-        <Route path="/" element={<Home onResult={handleResult} />} />
+        <Route path="/" element={<Home onResult={handleResult} isAuthenticated={isAuthenticated} />} />
+        <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+        
+        {/* Protected Route */}
         <Route
           path="/dashboard"
           element={
-            <Dashboard
-              data={analysisData}
-              onReset={handleReset}
-              jobId={jobId}
-            />
+            isAuthenticated ? (
+              <Dashboard
+                data={analysisData}
+                onReset={handleReset}
+                jobId={jobId}
+              />
+            ) : (
+              <Login onLoginSuccess={handleLoginSuccess} />
+            )
           }
         />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Home onResult={handleResult} isAuthenticated={isAuthenticated} />} />
       </Routes>
     </div>
   );

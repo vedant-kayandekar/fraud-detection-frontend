@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 /**
- * Single transaction predictor form with fraud gauge result.
+ * Single Transaction Predictor — Sentinel Amber design.
  */
 export default function SinglePredictor() {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,17 +50,17 @@ export default function SinglePredictor() {
   };
 
   const gaugeColor = result
-    ? result.fraud_probability > 0.7 ? '#ef4444'
-    : result.fraud_probability > 0.4 ? '#f59e0b' : '#22c55e'
-    : '#6366f1';
+    ? result.fraud_probability > 0.7 ? '#ba1a1a'
+    : result.fraud_probability > 0.4 ? '#d97706' : '#16a34a'
+    : '#d97706';
 
   const fields = [
-    { name: 'user_id', label: 'User ID', type: 'text' },
-    { name: 'transaction_amount', label: 'Amount (₹)', type: 'text' },
+    { name: 'user_id', label: 'User Account ID', type: 'text' },
+    { name: 'transaction_amount', label: 'Transaction Amount', type: 'text' },
     { name: 'transaction_timestamp', label: 'Timestamp', type: 'datetime-local' },
     { name: 'user_location', label: 'User City', type: 'text' },
     { name: 'merchant_location', label: 'Merchant City', type: 'text' },
-    { name: 'merchant_category', label: 'Category', type: 'text' },
+    { name: 'merchant_category', label: 'Merchant Category', type: 'select', options: ['Electronics', 'Travel', 'Food', 'Fashion', 'Healthcare', 'Entertainment'] },
     { name: 'device_id', label: 'Device ID', type: 'text' },
     { name: 'device_type', label: 'Device Type', type: 'select', options: ['mobile', 'web', 'ATM'] },
     { name: 'payment_method', label: 'Payment Method', type: 'select', options: ['Card', 'UPI', 'Wallet', 'NetBanking'] },
@@ -73,30 +73,32 @@ export default function SinglePredictor() {
     <div className="glass-card animate-slide-up" id="single-predictor">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full p-6 flex items-center justify-between text-white hover:bg-dark-hover/30 transition-colors rounded-2xl"
+        className="w-full p-6 flex items-center justify-between text-ink hover:bg-surface-container-low/50 transition-colors rounded-card"
       >
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-accent/10">
             <AlertTriangle className="w-5 h-5 text-accent" />
           </div>
-          <span className="font-semibold">Single Transaction Predictor</span>
+          <span className="font-semibold text-ink">On-Demand Transaction Analysis</span>
         </div>
-        {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        {isOpen ? <ChevronUp className="w-5 h-5 text-on-surface-variant" /> : <ChevronDown className="w-5 h-5 text-on-surface-variant" />}
       </button>
 
       {isOpen && (
         <div className="px-6 pb-6 animate-fade-in">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {fields.map((f) => (
               <div key={f.name}>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">{f.label}</label>
+                <label className="block text-xs font-medium tracking-[0.1em] text-on-surface-variant mb-1.5 uppercase">
+                  {f.label}
+                </label>
                 {f.type === 'select' ? (
                   <select
                     name={f.name}
                     value={form[f.name]}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-sm text-white
-                               focus:border-accent focus:outline-none"
+                    className="w-full px-3 py-2.5 bg-surface-container-highest rounded-lg text-sm text-ink
+                               focus:bg-surface-container-lowest focus:ring-1 focus:ring-accent/40 outline-none transition-all"
                   >
                     {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
@@ -106,31 +108,31 @@ export default function SinglePredictor() {
                     name={f.name}
                     value={form[f.name]}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-sm text-white
-                               placeholder-gray-500 focus:border-accent focus:outline-none"
+                    className="w-full px-3 py-2.5 bg-surface-container-highest rounded-lg text-sm text-ink
+                               placeholder-outline focus:bg-surface-container-lowest focus:ring-1 focus:ring-accent/40 outline-none transition-all"
                   />
                 )}
               </div>
             ))}
-            <div className="sm:col-span-2 lg:col-span-3">
+            <div className="sm:col-span-2 lg:col-span-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-accent to-purple-600 text-white font-semibold rounded-xl
-                           hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-8 py-3 bg-ink text-white font-medium rounded-lg
+                           hover:bg-ink/90 transition-all disabled:opacity-50 flex items-center gap-2"
               >
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Predicting...</> : '🔍 Predict Fraud'}
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</> : 'Analyse Transaction'}
               </button>
             </div>
           </form>
 
           {result && (
-            <div className="mt-6 p-6 bg-dark-bg rounded-xl border border-dark-border animate-fade-in">
+            <div className="mt-6 p-6 bg-surface-container-low rounded-xl animate-fade-in">
               <div className="flex flex-col sm:flex-row items-center gap-8">
                 {/* Gauge */}
                 <div className="relative w-32 h-32 flex-shrink-0">
                   <svg viewBox="0 0 36 36" className="w-32 h-32 -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2a2d37" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e7e2d8" strokeWidth="3" />
                     <circle
                       cx="18" cy="18" r="15.9" fill="none"
                       stroke={gaugeColor}
@@ -140,53 +142,39 @@ export default function SinglePredictor() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
+                    <span className="text-2xl font-bold text-ink">
                       {(result.fraud_probability * 100).toFixed(0)}%
                     </span>
-                    <span className="text-xs text-gray-400">Risk</span>
+                    <span className="text-[10px] tracking-[0.15em] text-on-surface-variant uppercase">Probability</span>
                   </div>
                 </div>
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3 flex-wrap">
                     {result.is_fraud ? (
-                      <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm font-semibold flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" /> FRAUD DETECTED
+                      <span className="font-display text-lg font-bold text-fraud">
+                        High Risk Detected
                       </span>
                     ) : (
-                      <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg text-sm font-semibold flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4" /> LEGITIMATE
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-400">
-                      Confidence: <span className="text-white font-medium">{result.confidence}</span>
-                    </span>
-                    {result.model_used && (
-                      <span className="px-2 py-1 bg-accent/10 text-accent text-xs rounded-md">
-                        Model: {result.model_used}
-                      </span>
-                    )}
-                    {result.risk_level && (
-                      <span className={`px-2 py-1 text-xs rounded-md font-medium
-                        ${result.risk_level === 'Critical' ? 'bg-red-500/20 text-red-400'
-                        : result.risk_level === 'High' ? 'bg-orange-500/20 text-orange-400'
-                        : result.risk_level === 'Medium' ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-green-500/20 text-green-400'}`}>
-                        Risk: {result.risk_level}
+                      <span className="font-display text-lg font-bold text-safe">
+                        Low Risk — Legitimate
                       </span>
                     )}
                   </div>
+                  <p className="text-sm text-on-surface-variant mb-4">
+                    Model confidence is {result.confidence?.toLowerCase() || 'moderate'} based on recent patterns.
+                  </p>
 
                   <div className="flex flex-wrap gap-2">
                     {(result.reasons || []).map((r, i) => (
                       <span
                         key={i}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium
-                          ${r.impact === 'high' || r.impact_score > 0.5 ? 'bg-red-500/20 text-red-400'
-                          : r.impact === 'medium' || r.impact_score > 0.2 ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-blue-500/20 text-blue-400'}`}
+                        className={`px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-wider
+                          ${r.impact === 'high' || r.impact_score > 0.5 ? 'bg-fraud/10 text-fraud'
+                          : r.impact === 'medium' || r.impact_score > 0.2 ? 'bg-accent/10 text-accent'
+                          : 'bg-surface-container-highest text-on-surface-variant'}`}
                       >
-                        {r.feature || r} {r.direction ? `(${r.direction})` : ''}
+                        {(r.feature || r)?.toString().replace(/_/g, ' ')} {r.direction ? `(${r.direction})` : ''}
                       </span>
                     ))}
                   </div>
