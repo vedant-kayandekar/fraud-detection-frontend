@@ -45,7 +45,7 @@ export default function Login({ onLoginSuccess }) {
         </div>
 
         <h1 className="text-2xl font-bold text-white text-center mb-2 relative z-10">
-          Welcome to FraudGuard
+          Welcome to FinLens
         </h1>
         <p className="text-gray-400 text-center mb-8 text-sm relative z-10">
           {isLogin ? 'Sign in to access your dashboard' : 'Create an account to get started'}

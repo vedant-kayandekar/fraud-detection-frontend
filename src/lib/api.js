@@ -1,7 +1,7 @@
 const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
 
 // Helper to get auth token
-export const getToken = () => localStorage.getItem('fraudguard_token');
+export const getToken = () => localStorage.getItem('finlens_token');
 
 /**
  * Authenticate user and get JWT session.
@@ -18,7 +18,7 @@ export async function login(email, password) {
   }
   const data = await res.json();
   if (data.access_token) {
-    localStorage.setItem('fraudguard_token', data.access_token);
+    localStorage.setItem('finlens_token', data.access_token);
   }
   return data;
 }
@@ -38,7 +38,7 @@ export async function signup(email, password) {
   }
   const data = await res.json();
   if (data.access_token) {
-    localStorage.setItem('fraudguard_token', data.access_token);
+    localStorage.setItem('finlens_token', data.access_token);
   }
   return data;
 }
@@ -47,7 +47,7 @@ export async function signup(email, password) {
  * Log out the active user.
  */
 export function logout() {
-  localStorage.removeItem('fraudguard_token');
+  localStorage.removeItem('finlens_token');
 }
 
 /**
@@ -104,15 +104,53 @@ export async function analyzeCSV(file, onProgress = null) {
     xhr.onerror = () => reject(new Error('Network error'));
     xhr.ontimeout = () => reject(new Error('Request timed out'));
 
+    // Messages for different progress stages
+    const stages = [
+      { at: 35, stage: 'processing', msg: '🧹 Cleaning data...' },
+      { at: 50, stage: 'features', msg: '🔬 Engineering fraud signals...' },
+      { at: 65, stage: 'models', msg: '🤖 Running XGBoost fast-path...' },
+      { at: 80, stage: 'shap', msg: '🧠 Computing SHAP explanations...' },
+      { at: 90, stage: 'charts', msg: '📊 Building dashboard...' },
+    ];
+
+    let currentProgress = 30;
+    let progressInterval = null;
+
     xhr.upload.onload = () => {
       if (onProgress) {
-        onProgress({ stage: 'processing', progress: 35, message: '🧹 Cleaning data...' });
-        setTimeout(() => onProgress({ stage: 'features', progress: 50, message: '🔬 Engineering fraud signals...' }), 2000);
-        setTimeout(() => onProgress({ stage: 'models', progress: 65, message: '🤖 Running XGBoost fast-path...' }), 4000);
-        setTimeout(() => onProgress({ stage: 'shap', progress: 80, message: '🧠 Computing SHAP explanations...' }), 7000);
-        setTimeout(() => onProgress({ stage: 'charts', progress: 90, message: '📊 Building dashboard...' }), 10000);
+        // Start a smooth ticking progress bar from 35 -> 95
+        currentProgress = 35;
+        progressInterval = setInterval(() => {
+          // Slow down as we get closer to 95 (never reaches 100 until server responds)
+          const remaining = 95 - currentProgress;
+          const increment = Math.max(0.3, remaining * 0.03);
+          currentProgress = Math.min(95, currentProgress + increment);
+
+          const stageInfo = [...stages].reverse().find(s => currentProgress >= s.at) || stages[0];
+          onProgress({ stage: stageInfo.stage, progress: Math.round(currentProgress), message: stageInfo.msg });
+        }, 1000);
       }
     };
+
+    // When the server actually responds, clear the interval and snap to 100
+    const originalOnload = xhr.onload;
+    xhr.onload = (e) => {
+      if (progressInterval) clearInterval(progressInterval);
+      originalOnload.call(xhr, e);
+    };
+    xhr.onerror = (() => {
+      const orig = xhr.onerror;
+      return (e) => {
+        if (progressInterval) clearInterval(progressInterval);
+        reject(new Error('Network error'));
+      };
+    })();
+    xhr.ontimeout = (() => {
+      return () => {
+        if (progressInterval) clearInterval(progressInterval);
+        reject(new Error('Request timed out'));
+      };
+    })();
 
     xhr.send(formData);
   });
@@ -136,7 +174,7 @@ export function pollComparison(jobId, onUpdate, onComplete) {
 
       onUpdate(data);
 
-      if (data.status === 'complete') {
+      if (data.status === 'complete' || data.status === 'expired') {
         clearInterval(interval);
         if (onComplete) onComplete(data);
       }

@@ -22,7 +22,7 @@ export default function Home({ onResult }) {
           <span className="text-sm text-accent font-medium">AI-Powered Fraud Detection</span>
         </div>
         <h1 className="text-5xl sm:text-6xl font-extrabold text-white mb-4 tracking-tight">
-          Fraud<span className="text-accent">Guard</span>
+          Fin<span className="text-accent">Lens</span>
         </h1>
         <p className="text-lg text-gray-400 max-w-xl mx-auto">
           Upload your transaction CSV and instantly detect fraud with
